@@ -41,12 +41,6 @@ exit(retval); \
 #define O_BINARY 0
 #endif
 
-struct heatshrink_header_t {
-  char    magic[2];
-  uint8_t window_sz2;
-  uint8_t lookahead_sz2;
-};
-
 static const int version_major = HEATSHRINK_VERSION_MAJOR;
 static const int version_minor = HEATSHRINK_VERSION_MINOR;
 static const int version_patch = HEATSHRINK_VERSION_PATCH;
@@ -268,13 +262,13 @@ static int encoder_sink_read(config *cfg, heatshrink_encoder *hse,
             if (sres < 0) { die("sink"); }
             sunk += sink_sz;
         }
-        
+
         do {
             pres = heatshrink_encoder_poll(hse, out_buf, out_sz, &poll_sz);
             if (pres < 0) { die("poll"); }
             if (handle_sink(out, poll_sz, out_buf) < 0) die("handle_sink");
         } while (pres == HSER_POLL_MORE);
-        
+
         if (poll_sz == 0 && data_sz == 0) {
             fres = heatshrink_encoder_finish(hse);
             if (fres < 0) { die("finish"); }
@@ -286,7 +280,7 @@ static int encoder_sink_read(config *cfg, heatshrink_encoder *hse,
 
 static int encode(config *cfg) {
     uint8_t window_sz2 = cfg->window_sz2;
-    size_t window_sz = 1 << window_sz2; 
+    size_t window_sz = 1 << window_sz2;
     heatshrink_encoder *hse = heatshrink_encoder_alloc(window_sz2, cfg->lookahead_sz2);
     if (hse == NULL) { die("failed to init encoder: bad settings"); }
     ssize_t read_sz = 0;
@@ -294,12 +288,12 @@ static int encode(config *cfg) {
 
     /* Write headers */
     io_handle *out = cfg->out;
-    struct heatshrink_header_t header;
+    heatshrink_header_t header;
     header.magic[0] = 'H';
     header.magic[1] = 'S';
     header.window_sz2 = cfg->window_sz2;
     header.lookahead_sz2 = cfg->lookahead_sz2;
-    handle_sink(out, sizeof(struct heatshrink_header_t), (uint8_t *)&header);
+    handle_sink(out, sizeof(heatshrink_header_t), (uint8_t *)&header);
 
     /* Process input until end of stream */
     while (1) {
@@ -350,7 +344,7 @@ static int decoder_sink_read(config *cfg, heatshrink_decoder *hsd,
             if (pres < 0) { die("poll"); }
             if (handle_sink(out, poll_sz, out_buf) < 0) die("handle_sink");
         } while (pres == HSDR_POLL_MORE);
-        
+
         if (data_sz == 0 && poll_sz == 0) {
             fres = heatshrink_decoder_finish(hsd);
             if (fres < 0) { die("finish"); }
@@ -365,7 +359,7 @@ static int decode(config *cfg) {
     io_handle *in = cfg->in;
 
     /* get window_sz2 and lookahead_sz2 from the header */
-    struct heatshrink_header_t *header;
+    heatshrink_header_t *header;
     handle_read(in, sizeof(*header), (uint8_t **)&header);
     uint8_t window_sz2 = cfg->window_sz2;
     uint8_t lookahead_sz2 = cfg->lookahead_sz2;
@@ -405,7 +399,7 @@ static int decode(config *cfg) {
         }
     }
     if (read_sz == -1) { HEATSHRINK_ERR(1, "read"); }
-        
+
     heatshrink_decoder_free(hsd);
     close_and_report(cfg);
     return 0;
