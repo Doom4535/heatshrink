@@ -58,7 +58,7 @@ heatshrink_decoder *heatshrink_decoder_alloc(uint16_t input_buffer_size,
     }
     size_t buffers_sz = (1 << window_sz2) + input_buffer_size;
     size_t sz = sizeof(heatshrink_decoder) + buffers_sz;
-    heatshrink_decoder *hsd = HEATSHRINK_MALLOC(sz);
+    heatshrink_decoder *hsd = (heatshrink_decoder *)HEATSHRINK_MALLOC(sz);
     if (hsd == NULL) { return NULL; }
     hsd->input_buffer_size = input_buffer_size;
     hsd->window_sz2 = window_sz2;
