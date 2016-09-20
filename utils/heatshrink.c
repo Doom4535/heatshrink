@@ -41,6 +41,12 @@ exit(retval); \
 #define O_BINARY 0
 #endif
 
+struct heatshrink_header_t {
+  char    magic[2];
+  uint8_t window_sz2;
+  uint8_t lookahead_sz2;
+};
+
 static const int version_major = HEATSHRINK_VERSION_MAJOR;
 static const int version_minor = HEATSHRINK_VERSION_MINOR;
 static const int version_patch = HEATSHRINK_VERSION_PATCH;
@@ -64,6 +70,7 @@ static void usage(void) {
         " -d        decode (decompress)\n"
         " -v        verbose (print input & output sizes, compression ratio, etc.)\n"
         "\n"
+	"encode options:\n"
         " -w SIZE   Base-2 log of LZSS sliding window size\n"
         "\n"
         "    A larger value allows searches a larger history of the data for repeated\n"
@@ -285,6 +292,15 @@ static int encode(config *cfg) {
     ssize_t read_sz = 0;
     io_handle *in = cfg->in;
 
+    /* Write headers */
+    io_handle *out = cfg->out;
+    struct heatshrink_header_t header;
+    header.magic[0] = 'H';
+    header.magic[1] = 'S';
+    header.window_sz2 = cfg->window_sz2;
+    header.lookahead_sz2 = cfg->lookahead_sz2;
+    handle_sink(out, sizeof(struct heatshrink_header_t), (uint8_t *)&header);
+
     /* Process input until end of stream */
     while (1) {
         uint8_t *input = NULL;
@@ -346,16 +362,26 @@ static int decoder_sink_read(config *cfg, heatshrink_decoder *hsd,
 }
 
 static int decode(config *cfg) {
+    io_handle *in = cfg->in;
+
+    /* get window_sz2 and lookahead_sz2 from the header */
+    struct heatshrink_header_t *header;
+    handle_read(in, sizeof(*header), (uint8_t **)&header);
     uint8_t window_sz2 = cfg->window_sz2;
+    uint8_t lookahead_sz2 = cfg->lookahead_sz2;
+    if (header->magic[0] == 'H' && header->magic[1] == 'S') {
+        window_sz2 = header->window_sz2;
+        lookahead_sz2 = header->lookahead_sz2;
+    }
+    handle_drop(in, sizeof(*header));
+
     size_t window_sz = 1 << window_sz2;
     size_t ibs = cfg->decoder_input_buffer_size;
     heatshrink_decoder *hsd = heatshrink_decoder_alloc(ibs,
-        window_sz2, cfg->lookahead_sz2);
+        window_sz2, lookahead_sz2);
     if (hsd == NULL) { die("failed to init decoder"); }
 
     ssize_t read_sz = 0;
-
-    io_handle *in = cfg->in;
 
     HSD_finish_res fres;
 
