@@ -29,6 +29,9 @@ typedef enum {
     HSDR_FINISH_ERROR_NULL=-1,  /* NULL arguments */
 } HSD_finish_res;
 
+/* read at most SIZE bytes of data into DEST, return the actual bytes read. */
+typedef size_t (*read_cb_t)(void * args, uint8_t * dest, size_t size);
+
 #if HEATSHRINK_DYNAMIC_ALLOC
 #define HEATSHRINK_DECODER_INPUT_BUFFER_SIZE(BUF) \
     ((BUF)->input_buffer_size)
@@ -90,6 +93,11 @@ void heatshrink_decoder_reset(heatshrink_decoder *hsd);
  * indicate how many bytes were actually sunk (in case a buffer was filled). */
 HSD_sink_res heatshrink_decoder_sink(heatshrink_decoder *hsd,
     uint8_t *in_buf, size_t size, size_t *input_size);
+
+/* Sink at most SIZE bytes from READ_CB into the decoder. *INPUT_SIZE is set to
+ * indicate how many bytes were actually sunk (in case a buffer was filled). */
+HSD_sink_res heatshrink_decoder_sink_cb(heatshrink_decoder *hsd,
+    read_cb_t read_cb, void * cb_args, size_t *input_size);
 
 /* Poll for output from the decoder, copying at most OUT_BUF_SIZE bytes into
  * OUT_BUF (setting *OUTPUT_SIZE to the actual amount copied). */

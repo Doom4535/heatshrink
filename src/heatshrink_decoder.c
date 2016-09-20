@@ -113,6 +113,26 @@ HSD_sink_res heatshrink_decoder_sink(heatshrink_decoder *hsd,
     return HSDR_SINK_OK;
 }
 
+/* Copy SIZE bytes into the decoder's input buffer, if it will fit. */
+HSD_sink_res heatshrink_decoder_sink_cb(heatshrink_decoder *hsd,
+    read_cb_t read_cb, void * cb_args, size_t *input_size)
+{
+    if ((hsd == NULL) || (read_cb == NULL) || (input_size == NULL)) {
+        return HSDR_SINK_ERROR_NULL;
+    }
+
+    size_t rem = HEATSHRINK_DECODER_INPUT_BUFFER_SIZE(hsd) - hsd->input_size;
+    if (rem == 0) {
+        *input_size = 0;
+        return HSDR_SINK_FULL;
+    }
+
+    LOG("-- sinking %zd bytes\n", rem);
+    /* copy into input buffer (at head of buffers) */
+    *input_size = read_cb(cb_args, &hsd->buffers[hsd->input_size], rem);
+    hsd->input_size += *input_size;
+    return HSDR_SINK_OK;
+}
 
 /*****************
  * Decompression *
@@ -173,7 +193,7 @@ HSD_poll_res heatshrink_decoder_poll(heatshrink_decoder *hsd,
         default:
             return HSDR_POLL_ERROR_UNKNOWN;
         }
-        
+
         /* If the current state cannot advance, check if input or output
          * buffer are exhausted. */
         if (hsd->state == in_state) {
