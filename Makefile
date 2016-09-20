@@ -72,9 +72,12 @@ INSTALL ?=	install
 RM ?=		rm
 
 install: libraries heatshrink
+	$(INSTALL) -d ${PREFIX}/bin
 	${INSTALL} -c heatshrink ${PREFIX}/bin/
+	$(INSTALL) -d ${PREFIX}/lib
 	${INSTALL} -c libheatshrink_static.a ${PREFIX}/lib/
 	${INSTALL} -c libheatshrink_dynamic.a ${PREFIX}/lib/
+	$(INSTALL) -d ${PREFIX}/include
 	${INSTALL} -c src/heatshrink_common.h ${PREFIX}/include/
 	${INSTALL} -c src/heatshrink_config.h ${PREFIX}/include/
 	${INSTALL} -c src/heatshrink_encoder.h ${PREFIX}/include/
