@@ -27,7 +27,8 @@ ci: test
 clean:
 	rm -f \
 		heatshrink \
-		tests/test_heatshrink_{dynamic,static} \
+		tests/test_heatshrink_dynamic \
+		tests/test_heatshrink_static \
 		src/*.o src/*.os src/*.od \
 		utils/*.o utils/*.os utils/*.od \
 		tests/*.o tests/*.os tests/*.od \
