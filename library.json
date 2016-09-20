@@ -1,0 +1,22 @@
+{
+  "name":"heatshrink",
+  "description":"An embedded data compression library",
+  "keywords":"compression, decompression",
+  "authors":
+  [
+    {
+      "name": "Atomic Objects"
+    },
+    {
+      "name": "Victor Tseng",
+      "maintainer": true
+    }
+  ],
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/Palatis/heatshrink.git"
+  },
+  "frameworks": "arduino",
+  "platforms": "*"
+}

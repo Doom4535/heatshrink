@@ -73,7 +73,7 @@ typedef struct {
  * must match the settings used when the data was compressed.)
  * Returns NULL on error. */
 heatshrink_decoder *heatshrink_decoder_alloc(uint16_t input_buffer_size,
-    uint8_t expansion_buffer_sz2, uint8_t lookahead_sz2);
+    uint8_t window_sz2, uint8_t lookahead_sz2);
 
 /* Free a decoder. */
 void heatshrink_decoder_free(heatshrink_decoder *hsd);

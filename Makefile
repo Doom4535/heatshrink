@@ -12,21 +12,27 @@ WARN += -Wmissing-declarations
 #THEFT_INC=	-I${THEFT_PATH}/include/
 #LDFLAGS += -L${THEFT_PATH}/lib -ltheft
 
-CFLAGS += -std=c99 -g ${WARN} ${THEFT_INC} ${OPTIMIZE}
+CFLAGS += -std=c99 -g -Isrc ${WARN} ${THEFT_INC} ${OPTIMIZE}
 
 all: heatshrink test_runners libraries
 
 libraries: libheatshrink_static.a libheatshrink_dynamic.a
 
-test_runners: test_heatshrink_static test_heatshrink_dynamic
+test_runners: tests/test_heatshrink_static tests/test_heatshrink_dynamic
 test: test_runners
-	./test_heatshrink_static
-	./test_heatshrink_dynamic
+	./tests/test_heatshrink_static
+	./tests/test_heatshrink_dynamic
 ci: test
 
 clean:
-	rm -f heatshrink test_heatshrink_{dynamic,static} \
-		*.o *.os *.od *.core *.a {dec,enc}_sm.png TAGS
+	rm -f \
+		heatshrink \
+		tests/test_heatshrink_{dynamic,static} \
+		src/*.o src/*.os src/*.od \
+		utils/*.o utils/*.os utils/*.od \
+		tests/*.o tests/*.os tests/*.od \
+		 *.core *.a \
+		{dec,enc}_sm.png TAGS
 	rm -rf ${BENCHMARK_OUT}
 
 TAGS:
@@ -68,10 +74,10 @@ install: libraries heatshrink
 	${INSTALL} -c heatshrink ${PREFIX}/bin/
 	${INSTALL} -c libheatshrink_static.a ${PREFIX}/lib/
 	${INSTALL} -c libheatshrink_dynamic.a ${PREFIX}/lib/
-	${INSTALL} -c heatshrink_common.h ${PREFIX}/include/
-	${INSTALL} -c heatshrink_config.h ${PREFIX}/include/
-	${INSTALL} -c heatshrink_encoder.h ${PREFIX}/include/
-	${INSTALL} -c heatshrink_decoder.h ${PREFIX}/include/
+	${INSTALL} -c src/heatshrink_common.h ${PREFIX}/include/
+	${INSTALL} -c src/heatshrink_config.h ${PREFIX}/include/
+	${INSTALL} -c src/heatshrink_encoder.h ${PREFIX}/include/
+	${INSTALL} -c src/heatshrink_decoder.h ${PREFIX}/include/
 
 uninstall:
 	${RM} -f ${PREFIX}/lib/libheatshrink_static.a
@@ -83,7 +89,7 @@ uninstall:
 
 # Internal targets and rules
 
-OBJS = heatshrink_encoder.o heatshrink_decoder.o
+OBJS = src/heatshrink_encoder.o src/heatshrink_decoder.o
 
 DYNAMIC_OBJS= $(OBJS:.o=.od)
 STATIC_OBJS=  $(OBJS:.o=.os)
@@ -96,13 +102,13 @@ STATIC_LDFLAGS= ${LDFLAGS} -L. -lheatshrink_static
 CFLAGS_STATIC = ${CFLAGS} -DHEATSHRINK_DYNAMIC_ALLOC=0
 CFLAGS_DYNAMIC = ${CFLAGS} -DHEATSHRINK_DYNAMIC_ALLOC=1
 
-heatshrink: heatshrink.od libheatshrink_dynamic.a
+heatshrink: utils/heatshrink.od libheatshrink_dynamic.a
 	${CC} -o $@ $^ ${CFLAGS_DYNAMIC} -L. -lheatshrink_dynamic
 
-test_heatshrink_dynamic: test_heatshrink_dynamic.od test_heatshrink_dynamic_theft.od libheatshrink_dynamic.a
-	${CC} -o $@ $< ${CFLAGS_DYNAMIC} test_heatshrink_dynamic_theft.od ${DYNAMIC_LDFLAGS}
+tests/test_heatshrink_dynamic: tests/test_heatshrink_dynamic.od tests/test_heatshrink_dynamic_theft.od libheatshrink_dynamic.a
+	${CC} -o $@ $< ${CFLAGS_DYNAMIC} tests/test_heatshrink_dynamic_theft.od ${DYNAMIC_LDFLAGS}
 
-test_heatshrink_static: test_heatshrink_static.os libheatshrink_static.a
+tests/test_heatshrink_static: tests/test_heatshrink_static.os libheatshrink_static.a
 	${CC} -o $@ $< ${CFLAGS_STATIC} ${STATIC_LDFLAGS}
 
 libheatshrink_static.a: ${STATIC_OBJS}
@@ -117,6 +123,6 @@ libheatshrink_dynamic.a: ${DYNAMIC_OBJS}
 %.os: %.c
 	${CC} -c -o $@ $< ${CFLAGS_STATIC}
 
-*.os: Makefile *.h
-*.od: Makefile *.h
+*.os: Makefile src/*.h
+*.od: Makefile src/*.h
 
